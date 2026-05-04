@@ -158,14 +158,18 @@ function deleteOrder(id) {
 }
 
 function updateOrder(id) {
-    const customer = prompt("New customer:");
-    const crab = prompt("New crab:");
+    const customer = prompt("New customer name:");
+    const crab = prompt("New crab type:");
     const quantity = prompt("New quantity:");
 
     let data = {};
-    if (customer) data.customer = customer;
-    if (crab) data.crab = crab;
-    if (quantity) data.quantity = parseInt(quantity);
+    // Only add to the object if the user didn't hit cancel and didn't leave it blank
+    if (customer !== null && customer.trim() !== "") data.customer = customer;
+    if (crab !== null && crab.trim() !== "") data.crab = crab;
+    if (quantity !== null && quantity.trim() !== "") data.quantity = parseInt(quantity);
+
+    // If the object is empty, don't even bother calling the server
+    if (Object.keys(data).length === 0) return;
 
     fetch(`/orders/${id}`, {
         method: "PUT",
@@ -176,7 +180,6 @@ function updateOrder(id) {
     .then(() => showOrders())
     .catch(err => alert("Error updating order: " + err));
 }
-
 function goToHistory() {
     window.location.href = "/history-page";
 }

@@ -31,7 +31,7 @@ db = SQLAlchemy(app)
 # MODEL (Mapped to 'Crab' Table)
 # ==============================
 class Order(db.Model):
-    __tablename__ = 'order' # This matches your manual table name exactly
+    __tablename__ = '`order`' # This matches your manual table name exactly
     
     id = db.Column(db.Integer, primary_key=True)
     customer = db.Column(db.String(100), nullable=False)
