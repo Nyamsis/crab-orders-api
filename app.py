@@ -1,19 +1,24 @@
+import os
+import pymysql
+from datetime import datetime, timezone
 from flask import Flask, request, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-import os
+
+# This is required for many cloud environments to recognize the MySQL driver
+pymysql.install_as_MySQLdb()
 
 app = Flask(__name__)
 
 # ==============================
-# DATABASE CONFIG (MYSQL ONLY)
+# DATABASE CONFIG
 # ==============================
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Railway usually provides DATABASE_URL or MYSQL_URL
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("MYSQL_URL")
 
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set. Please configure your MySQL connection.")
+    raise ValueError("DATABASE_URL is not set. Check your Railway environment variables.")
 
-# Fix mysql:// to mysql+pymysql://
+# Standardize the driver prefix
 if DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
 
@@ -23,9 +28,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # ==============================
-# MODEL
+# MODEL (Mapped to 'Crab' Table)
 # ==============================
 class Order(db.Model):
+    __tablename__ = 'Crab' # This matches your manual table name exactly
+    
     id = db.Column(db.Integer, primary_key=True)
     customer = db.Column(db.String(100), nullable=False)
     crab = db.Column(db.String(50), nullable=False)
@@ -33,7 +40,8 @@ class Order(db.Model):
     price = db.Column(db.Integer, nullable=False)
     total = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="pending")
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    # Updated to modern UTC handling
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 # ==============================
 # CRAB PRICES
@@ -51,6 +59,8 @@ CRAB_PRICES = {
 # HELPERS
 # ==============================
 def get_orders_data():
+    # Using modern session.query
+    orders = db.session.query(Order).all()
     return [{
         "id": o.id,
         "customer": o.customer,
@@ -60,7 +70,7 @@ def get_orders_data():
         "total": o.total,
         "status": o.status,
         "timestamp": o.timestamp.strftime("%Y-%m-%d %H:%M:%S") if o.timestamp else None
-    } for o in Order.query.all()]
+    } for o in orders]
 
 # ==============================
 # ROUTES
@@ -74,9 +84,6 @@ def history_page():
     return render_template("history.html")
 
 @app.route('/history', methods=['GET'])
-def get_history():
-    return jsonify({"orders": get_orders_data()})
-
 @app.route('/orders', methods=['GET'])
 def get_orders():
     return jsonify({"orders": get_orders_data()})
@@ -84,92 +91,83 @@ def get_orders():
 @app.route('/orders', methods=['POST'])
 def add_order():
     data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "Invalid JSON"}), 400
+    if not data or "customer" not in data or "crab" not in data:
+        return jsonify({"error": "Missing required data"}), 400
 
     try:
-        quantity = int(data["quantity"])
-        crab = data["crab"]
-        price = CRAB_PRICES.get(crab, 0)
-    except:
-        return jsonify({"error": "Invalid data"}), 400
+        quantity = int(data.get("quantity", 1))
+        crab_type = data["crab"]
+        price = CRAB_PRICES.get(crab_type, 0)
+        
+        new_order = Order(
+            customer=data["customer"],
+            crab=crab_type,
+            quantity=quantity,
+            price=price,
+            total=price * quantity,
+            status="pending"
+        )
 
-    order = Order(
-        customer=data["customer"],
-        crab=crab,
-        quantity=quantity,
-        price=price,
-        total=price * quantity,
-        status="pending",
-        timestamp=datetime.utcnow()
-    )
-
-    db.session.add(order)
-    db.session.commit()
-
-    return jsonify({"message": "Order added successfully"})
+        db.session.add(new_order)
+        db.session.commit()
+        return jsonify({"message": "Order added successfully"}), 201
+    except Exception as e:
+        db.session.rollback() # Important: undo changes if DB error occurs
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/orders/<int:id>', methods=['PUT'])
 def update_order(id):
     data = request.get_json()
+    # session.get is the modern way to find by ID
+    order = db.session.get(Order, id)
 
-    if not data:
-        return jsonify({"error": "Invalid JSON"}), 400
-
-    order = Order.query.get(id)
     if not order:
         return jsonify({"error": "Order not found"}), 404
 
-    if "customer" in data:
-        order.customer = data["customer"]
+    if "customer" in data: order.customer = data["customer"]
+    if "crab" in data: order.crab = data["crab"]
+    if "quantity" in data: order.quantity = int(data["quantity"])
+    if "status" in data: order.status = data["status"]
 
-    if "crab" in data:
-        order.crab = data["crab"]
-
-    if "quantity" in data:
-        order.quantity = int(data["quantity"])
-
+    # Recalculate based on updated info
     order.price = CRAB_PRICES.get(order.crab, 0)
     order.total = order.price * order.quantity
-    order.timestamp = datetime.utcnow()
 
-    db.session.commit()
-
-    return jsonify({"message": "Order updated successfully"})
+    try:
+        db.session.commit()
+        return jsonify({"message": "Order updated successfully"})
+    except:
+        db.session.rollback()
+        return jsonify({"error": "Update failed"}), 500
 
 @app.route('/orders/<int:id>', methods=['DELETE'])
 def delete_order(id):
-    order = Order.query.get(id)
-
+    order = db.session.get(Order, id)
     if not order:
         return jsonify({"error": "Order not found"}), 404
 
-    db.session.delete(order)
-    db.session.commit()
-
-    return jsonify({"message": "Order deleted successfully"})
+    try:
+        db.session.delete(order)
+        db.session.commit()
+        return jsonify({"message": "Order deleted successfully"})
+    except:
+        db.session.rollback()
+        return jsonify({"error": "Delete failed"}), 500
 
 @app.route('/orders/<int:id>/finish', methods=['PUT'])
 def finish_order(id):
-    order = Order.query.get(id)
-
+    order = db.session.get(Order, id)
     if not order:
         return jsonify({"error": "Order not found"}), 404
 
     order.status = "finished"
-    order.timestamp = datetime.utcnow()
-
     db.session.commit()
-
     return jsonify({"message": "Order marked as finished"})
 
 # ==============================
 # MAIN
 # ==============================
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-
+    # We do NOT use db.create_all() here because you are doing it manually
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)

@@ -73,19 +73,17 @@ function addOrder() {
         return;
     }
 
-    const xml = `
-<order>
-    <customer>${customer}</customer>
-    <crab>${crab}</crab>
-    <quantity>${quantity}</quantity>
-</order>`;
-
     fetch('/orders', {
         method: "POST",
-        headers: { "Content-Type": "application/xml" },
-        body: xml
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            customer: customer,
+            crab: crab,
+            quantity: parseInt(quantity)
+        })
     })
-    .then(() => {
+    .then(res => res.json())
+    .then(data => {
         alert("Order Added!");
 
         document.getElementById("customer").value = "";
@@ -93,7 +91,8 @@ function addOrder() {
         document.getElementById("quantity").value = "";
 
         if (ordersVisible) showOrders();
-    });
+    })
+    .catch(err => alert("Error: " + err));
 }
 
 function toggleOrders() {
@@ -108,18 +107,17 @@ function toggleOrders() {
 
 function showOrders() {
     fetch('/orders')
-    .then(res => res.text())
-    .then(text => {
-        const xml = new DOMParser().parseFromString(text, "text/xml");
-        const items = xml.getElementsByTagName("item");
+    .then(res => res.json())
+    .then(data => {
+        const items = data.orders || [];
         const list = document.getElementById("list");
 
         list.innerHTML = "";
 
         for (let i = items.length - 1; i >= 0; i--) {
             const o = items[i];
-            const id = o.getElementsByTagName("id")[0]?.textContent;
-            const status = o.getElementsByTagName("status")[0]?.textContent;
+            const id = o.id;
+            const status = o.status;
 
             const li = document.createElement("li");
             li.className = status;
@@ -127,11 +125,11 @@ function showOrders() {
             li.innerHTML = `
                 <div class="order-info">
                     <span><strong>Order #</strong>${id}</span>
-                    <span><strong>Customer:</strong> ${o.getElementsByTagName("customer")[0]?.textContent}</span>
-                    <span><strong>Crab:</strong> ${o.getElementsByTagName("crab")[0]?.textContent}</span>
-                    <span><strong>Qty:</strong> ${o.getElementsByTagName("quantity")[0]?.textContent}</span>
-                    <span><strong>Price:</strong> ₱${o.getElementsByTagName("price")[0]?.textContent}</span>
-                    <span><strong>Total:</strong> ₱${o.getElementsByTagName("total")[0]?.textContent}</span>
+                    <span><strong>Customer:</strong> ${o.customer}</span>
+                    <span><strong>Crab:</strong> ${o.crab}</span>
+                    <span><strong>Qty:</strong> ${o.quantity}</span>
+                    <span><strong>Price:</strong> ₱${o.price}</span>
+                    <span><strong>Total:</strong> ₱${o.total}</span>
                     <span><strong>Status:</strong> ${status}</span>
                 </div>
                 <div class="order-actions">
@@ -145,7 +143,8 @@ function showOrders() {
         }
 
         list.style.display = "block";
-    });
+    })
+    .catch(err => alert("Error loading orders: " + err));
 }
 
 function finishOrder(id) {
@@ -163,17 +162,19 @@ function updateOrder(id) {
     const crab = prompt("New crab:");
     const quantity = prompt("New quantity:");
 
-    let xml = "<order>";
-    if (customer) xml += `<customer>${customer}</customer>`;
-    if (crab) xml += `<crab>${crab}</crab>`;
-    if (quantity) xml += `<quantity>${quantity}</quantity>`;
-    xml += "</order>";
+    let data = {};
+    if (customer) data.customer = customer;
+    if (crab) data.crab = crab;
+    if (quantity) data.quantity = parseInt(quantity);
 
     fetch(`/orders/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/xml" },
-        body: xml
-    }).then(() => showOrders());
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(() => showOrders())
+    .catch(err => alert("Error updating order: " + err));
 }
 
 function goToHistory() {

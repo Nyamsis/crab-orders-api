@@ -19,22 +19,16 @@
 <script>
 
 // =====================
-// XML PARSER
+// XML PARSER (REMOVED - No longer needed)
 // =====================
-function parseXML(text) {
-    return new DOMParser().parseFromString(text, "text/xml");
-}
-
 // =====================
 // LOAD HISTORY
 // =====================
 function loadHistory() {
     fetch('/history')
-    .then(res => res.text())
-    .then(text => {
-        const xml = parseXML(text);
-        const items = xml.getElementsByTagName("item");
-
+    .then(res => res.json())
+    .then(data => {
+        const items = data.orders || [];
         const list = document.getElementById("historyList");
         list.innerHTML = "";
 
@@ -44,17 +38,18 @@ function loadHistory() {
             const li = document.createElement("li");
 
             li.innerHTML = `
-                <strong>Order #${o.getElementsByTagName("id")[0]?.textContent}</strong><br>
-                Customer: ${o.getElementsByTagName("customer")[0]?.textContent}<br>
-                Crab: ${o.getElementsByTagName("crab")[0]?.textContent}<br>
-                Quantity: ${o.getElementsByTagName("quantity")[0]?.textContent}<br>
-                Total: ₱${o.getElementsByTagName("total")[0]?.textContent}<br>
-                Status: ${o.getElementsByTagName("status")[0]?.textContent}
+                <strong>Order #${o.id}</strong><br>
+                Customer: ${o.customer}<br>
+                Crab: ${o.crab}<br>
+                Quantity: ${o.quantity}<br>
+                Total: ₱${o.total}<br>
+                Status: ${o.status}
             `;
 
             list.appendChild(li);
         }
-    });
+    })
+    .catch(err => alert("Error loading history: " + err));
 }
 
 // =====================
