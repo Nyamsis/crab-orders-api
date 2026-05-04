@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crab Orders</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>Available Crabs</h2>
+    <ul id="crabTypes"></ul>
+</div>
+
+<div class="container">
+    <h1>Crab Orders</h1>
+
+    <div class="form-center">
+        <input id="customer" placeholder="Customer Name">
+        <input id="crab" placeholder="Crab Type">
+        <input id="quantity" type="number" placeholder="Quantity">
+        <button onclick="addOrder()">Add Order</button>
+    </div>
+
+    <div class="form-center">
+        <button onclick="goToHistory()">Transaction History</button>
+        <button onclick="toggleOrders()">Load Orders</button>
+    </div>
+
+    <ul id="list" style="display:none;"></ul>
+</div>
+
+<script>
+let ordersVisible = false;
+
+const crabTypes = [
+    { name: "King Crab", price: 10, img: "/static/images/kingcrab.jpg" },
+    { name: "Snow Crab", price: 9, img: "/static/images/snowcrab.jpg" },
+    { name: "Dungeness Crab", price: 8, img: "/static/images/dungenesscrab.jpg" },
+    { name: "Blue Crab", price: 7, img: "/static/images/bluecrab.jpg" },
+    { name: "Mud Crab", price: 6, img: "/static/images/mudcrab.jpg" },
+    { name: "Kasag", price: 5, img: "/static/images/kasagcrab.jpg" }
+];
+
+function loadCrabTypes() {
+    const list = document.getElementById("crabTypes");
+    list.innerHTML = "";
+
+    crabTypes.forEach(crab => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <img src="${crab.img}">
+            <div>
+                <strong>${crab.name}</strong><br>
+                ₱${crab.price}
+            </div>
+        `;
+
+        li.onclick = () => {
+            document.getElementById("crab").value = crab.name;
+        };
+
+        list.appendChild(li);
+    });
+}
+
+function addOrder() {
+    const customer = document.getElementById("customer").value;
+    const crab = document.getElementById("crab").value;
+    const quantity = document.getElementById("quantity").value;
+
+    if (!customer || !crab || !quantity) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    const xml = `
+<order>
+    <customer>${customer}</customer>
+    <crab>${crab}</crab>
+    <quantity>${quantity}</quantity>
+</order>`;
+
+    fetch('/orders', {
+        method: "POST",
+        headers: { "Content-Type": "application/xml" },
+        body: xml
+    })
+    .then(() => {
+        alert("Order Added!");
+
+        document.getElementById("customer").value = "";
+        document.getElementById("crab").value = "";
+        document.getElementById("quantity").value = "";
+
+        if (ordersVisible) showOrders();
+    });
+}
+
+function toggleOrders() {
+    ordersVisible = !ordersVisible;
+
+    if (ordersVisible) {
+        showOrders();
+    } else {
+        document.getElementById("list").style.display = "none";
+    }
+}
+
+function showOrders() {
+    fetch('/orders')
+    .then(res => res.text())
+    .then(text => {
+        const xml = new DOMParser().parseFromString(text, "text/xml");
+        const items = xml.getElementsByTagName("item");
+        const list = document.getElementById("list");
+
+        list.innerHTML = "";
+
+        for (let i = items.length - 1; i >= 0; i--) {
+            const o = items[i];
+            const id = o.getElementsByTagName("id")[0]?.textContent;
+            const status = o.getElementsByTagName("status")[0]?.textContent;
+
+            const li = document.createElement("li");
+            li.className = status;
+
+            li.innerHTML = `
+                <div class="order-info">
+                    <span><strong>Order #</strong>${id}</span>
+                    <span><strong>Customer:</strong> ${o.getElementsByTagName("customer")[0]?.textContent}</span>
+                    <span><strong>Crab:</strong> ${o.getElementsByTagName("crab")[0]?.textContent}</span>
+                    <span><strong>Qty:</strong> ${o.getElementsByTagName("quantity")[0]?.textContent}</span>
+                    <span><strong>Price:</strong> ₱${o.getElementsByTagName("price")[0]?.textContent}</span>
+                    <span><strong>Total:</strong> ₱${o.getElementsByTagName("total")[0]?.textContent}</span>
+                    <span><strong>Status:</strong> ${status}</span>
+                </div>
+                <div class="order-actions">
+                    <button onclick="finishOrder(${id})">Finish</button>
+                    <button onclick="updateOrder(${id})">Update</button>
+                    <button onclick="deleteOrder(${id})">Delete</button>
+                </div>
+            `;
+
+            list.appendChild(li);
+        }
+
+        list.style.display = "block";
+    });
+}
+
+function finishOrder(id) {
+    fetch(`/orders/${id}/finish`, { method: "PUT" })
+    .then(() => showOrders());
+}
+
+function deleteOrder(id) {
+    fetch(`/orders/${id}`, { method: "DELETE" })
+    .then(() => showOrders());
+}
+
+function updateOrder(id) {
+    const customer = prompt("New customer:");
+    const crab = prompt("New crab:");
+    const quantity = prompt("New quantity:");
+
+    let xml = "<order>";
+    if (customer) xml += `<customer>${customer}</customer>`;
+    if (crab) xml += `<crab>${crab}</crab>`;
+    if (quantity) xml += `<quantity>${quantity}</quantity>`;
+    xml += "</order>";
+
+    fetch(`/orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/xml" },
+        body: xml
+    }).then(() => showOrders());
+}
+
+function goToHistory() {
+    window.location.href = "/history-page";
+}
+
+window.onload = loadCrabTypes;
+</script>
+
+</body>
+</html>
