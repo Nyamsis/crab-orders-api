@@ -3,12 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Customer Orders</title>
+<title>Transaction History</title>
 
 <style>
-/* =====================
-   GLOBAL
-===================== */
 * {
     margin: 0;
     padding: 0;
@@ -22,9 +19,6 @@ body {
     min-height: 100vh;
 }
 
-/* =====================
-   CONTAINER
-===================== */
 .container {
     max-width: 1100px;
     margin: auto;
@@ -36,9 +30,6 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* =====================
-   BACK BUTTON
-===================== */
 .form-center {
     display: flex;
     justify-content: center;
@@ -59,9 +50,6 @@ button:hover {
     background: #2563eb;
 }
 
-/* =====================
-   TABLE
-===================== */
 .history-table {
     width: 100%;
     border-collapse: collapse;
@@ -86,9 +74,6 @@ button:hover {
     background: #273449;
 }
 
-/* =====================
-   EMPTY STATE
-===================== */
 .empty {
     text-align: center;
     padding: 20px;
@@ -101,18 +86,18 @@ button:hover {
 <body>
 
 <div class="container">
-    <h1>Customer Orders</h1>
+    <h1>Transaction History</h1>
 
     <div class="form-center">
-        <button onclick="goBack()">⬅ Back to Dashboard</button>
+        <button onclick="goBack()">⬅ Back</button>
     </div>
 
     <table class="history-table">
         <thead>
             <tr>
-                <th>Order #</th>
+                <th>Transaction #</th>
                 <th>Customer</th>
-                <th>Crab</th>
+                <th>Item</th>
                 <th>Quantity</th>
                 <th>Price</th>
                 <th>Total</th>
@@ -128,7 +113,7 @@ button:hover {
 function loadHistory() {
     fetch('/orders')
     .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch orders");
+        if (!res.ok) throw new Error("Failed to fetch transactions");
         return res.json();
     })
     .then(data => {
@@ -138,7 +123,7 @@ function loadHistory() {
         if (items.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="empty">No orders found</td>
+                    <td colspan="8" class="empty">No transactions found</td>
                 </tr>`;
             return;
         }
@@ -159,7 +144,7 @@ function loadHistory() {
         `).join('');
     })
     .catch(err => {
-        alert('Error loading orders: ' + err.message);
+        alert('Error loading transactions: ' + err.message);
     });
 }
 
