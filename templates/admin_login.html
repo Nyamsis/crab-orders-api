@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Crab Orders</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_login.css') }}">
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Admin Access</h2>
+
+    <div id="errorMessage" class="error-message"></div>
+
+    <div class="login-form">
+        <input id="username" type="text" placeholder="Username" required>
+        <input id="password" type="password" placeholder="Password" required>
+        <button onclick="login()" class="login-btn">Sign In</button>
+    </div>
+
+    <a href="/" class="back-link">← Back to Crab Orders</a>
+</div>
+
+<script>
+function login() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const errorBox = document.getElementById("errorMessage");
+
+    errorBox.style.display = "none";
+
+    if (!username || !password) {
+        errorBox.innerText = "Please fill all fields";
+        errorBox.style.display = "block";
+        return;
+    }
+
+    fetch('/login', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+    })
+    .then(async res => {
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || "Login failed");
+        }
+
+        return data;
+    })
+    .then(() => {
+        window.location.href = "/admin-dashboard";
+    })
+    .catch(err => {
+        errorBox.innerText = err.message;
+        errorBox.style.display = "block";
+    });
+}
+</script>
+
+</body>
+</html>

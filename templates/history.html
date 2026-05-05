@@ -1,134 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Transaction History</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Customer Orders</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='history.css') }}">
 </head>
 <body>
 
 <div class="container">
-    <h1>Transaction History</h1>
+    <h1>Customer Orders</h1>
 
     <div class="form-center">
-        <button onclick="goBack()">⬅ Back to Orders</button>
+        <button onclick="goBack()">⬅ Back to Dashboard</button>
     </div>
 
-    <ul id="historyList"></ul>
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Crab</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+    </table>
 </div>
 
 <script>
-
-// =====================
-// XML PARSER (REMOVED - No longer needed)
-// =====================
-// =====================
-// LOAD HISTORY
-// =====================
 function loadHistory() {
-    fetch('/history')
-    .then(res => res.json())
-    .then(data => {
-        const items = data.orders || [];
-        const list = document.getElementById("historyList");
-        list.innerHTML = "";
-
-        for (let i = items.length - 1; i >= 0; i--) {
-            const o = items[i];
-
-            const li = document.createElement("li");
-
-            li.innerHTML = `
-                <strong>Order #${o.id}</strong><br>
-                Customer: ${o.customer}<br>
-                Crab: ${o.crab}<br>
-                Quantity: ${o.quantity}<br>
-                Total: ₱${o.total}<br>
-                Status: ${o.status}
-            `;
-
-            list.appendChild(li);
-        }
+    fetch('/orders')   // ✅ FIXED (use /orders instead of /history)
+    .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch orders");
+        return res.json();
     })
-    .catch(err => alert("Error loading history: " + err));
-}
-
-function showHistory() {
-    fetch('/history')
-    .then(res => res.json())
     .then(data => {
         const items = data.orders || [];
-        const list = document.getElementById("historyList");
-        list.innerHTML = "";
+        const tableBody = document.getElementById('historyTableBody');
 
-        // Sort items: show newest at the top
+        if (items.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8">No orders found</td></tr>`;
+            return;
+        }
+
         items.sort((a, b) => b.id - a.id);
 
-        items.forEach(o => {
-            const li = document.createElement("li");
-            li.className = `history-item ${o.status}`; // Allows for different colors based on status
-
-            li.innerHTML = `
-                <div class="order-info">
-                    <span class="date"><strong>Date:</strong> ${o.timestamp || 'N/A'}</span>
-                    <span><strong>Order #</strong>${o.id}</span>
-                    <span><strong>Customer:</strong> ${o.customer}</span>
-                    <span><strong>Crab:</strong> ${o.crab}</span>
-                    <span><strong>Total:</strong> ₱${o.total}</span>
-                    <span class="status-badge">${o.status.toUpperCase()}</span>
-                </div>
-                <div class="order-actions">
-                    <button class="btn-edit" onclick="updateOrder(${o.id})">Edit</button>
-                    <button class="btn-delete" onclick="deleteOrder(${o.id})">Delete</button>
-                </div>
-            `;
-            list.appendChild(li);
-        });
+        tableBody.innerHTML = items.map(o => `
+            <tr>
+                <td>#${o.id}</td>
+                <td>${o.customer}</td>
+                <td>${o.crab}</td>
+                <td>${o.quantity}</td>
+                <td>₱${o.price}</td>
+                <td>₱${o.total}</td>
+                <td>${o.timestamp || 'N/A'}</td>
+                <td>${o.status.toUpperCase()}</td>
+            </tr>
+        `).join('');
     })
-    .catch(err => console.error("Error:", err));
-}
-
-function updateOrder(id) {
-    const newCustomer = prompt("Update Customer Name:");
-    if (newCustomer === null) return; // User cancelled
-
-    const newQuantity = prompt("Update Quantity:");
-    if (newQuantity === null) return; // User cancelled
-
-    const data = {
-        customer: newCustomer,
-        quantity: parseInt(newQuantity)
-    };
-
-    fetch(`/orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Order updated!");
-            showHistory();
-        }
+    .catch(err => {
+        alert('Error loading orders: ' + err.message);
     });
 }
 
-function deleteOrder(id) {
-    if (!confirm("Are you sure you want to delete this record?")) return;
-
-    fetch(`/orders/${id}`, { method: "DELETE" })
-    .then(() => showHistory());
-}
-
-// =====================
-// BACK BUTTON
-// =====================
 function goBack() {
-    window.location.href = "/";
+    window.location.href = '/admin-dashboard';
 }
 
-// =====================
 window.onload = loadHistory;
-
 </script>
 
 </body>

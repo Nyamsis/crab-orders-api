@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Page - Crab Orders</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='order_page.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>Available Crabs</h2>
+    <ul id="crabTypes"></ul>
+</div>
+
+<div class="container">
+    <h1>Crab Orders</h1>
+
+    <div class="form-center">
+        <input id="customer" placeholder="Customer Name">
+        <input id="crab" placeholder="Select Crab (click above)">
+        <input id="quantity" type="number" min="1" value="1" placeholder="Quantity">
+        <button onclick="addOrder()">Add Order</button>
+    </div>
+
+    <div class="form-center">
+        <button onclick="goToLogin()" class="admin-btn">Login</button>
+    </div>
+</div>
+
+<script>
+const crabTypes = [
+    { name: "King Crab", price: 10, img: "/static/images/kingcrab.jpg" },
+    { name: "Snow Crab", price: 9, img: "/static/images/snowcrab.jpg" },
+    { name: "Dungeness Crab", price: 8, img: "/static/images/dungenesscrab.jpg" },
+    { name: "Blue Crab", price: 7, img: "/static/images/bluecrab.jpg" },
+    { name: "Mud Crab", price: 6, img: "/static/images/mudcrab.jpg" },
+    { name: "Kasag", price: 5, img: "/static/images/kasagcrab.jpg" }
+];
+
+function loadCrabTypes() {
+    const list = document.getElementById("crabTypes");
+    list.innerHTML = "";
+
+    crabTypes.forEach(crab => {
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+            <img src="${crab.img}" alt="${crab.name}">
+            <div>
+                <strong>${crab.name}</strong><br>
+                ₱${crab.price}
+            </div>
+        `;
+
+        li.onclick = () => {
+            document.getElementById("crab").value = crab.name;
+        };
+
+        list.appendChild(li);
+    });
+}
+
+function addOrder() {
+    const customer = document.getElementById("customer").value.trim();
+    const crab = document.getElementById("crab").value.trim();
+    const quantity = parseInt(document.getElementById("quantity").value);
+
+    if (!customer || !crab || !quantity) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    if (quantity < 1) {
+        alert("Quantity must be at least 1");
+        return;
+    }
+
+    fetch('/orders', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            customer: customer,
+            crab: crab,
+            quantity: quantity
+        })
+    })
+    .then(async res => {
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to add order");
+        }
+
+        return data;
+    })
+    .then(data => {
+        alert(data.message || "Order added successfully");
+
+        document.getElementById("customer").value = "";
+        document.getElementById("crab").value = "";
+        document.getElementById("quantity").value = 1;
+    })
+    .catch(err => {
+        alert("Error: " + err.message);
+    });
+}
+
+function goToLogin() {
+    window.location.href = "/login";
+}
+
+window.onload = loadCrabTypes;
+</script>
+
+</body>
+</html>

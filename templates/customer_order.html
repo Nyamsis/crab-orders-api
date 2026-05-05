@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Order Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='customer_order.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Customer Order Management</h1>
+
+    <div class="form-center">
+        <button class="small-button" onclick="goBack()">⬅ Back to Dashboard</button>
+    </div>
+
+    <table class="customer-table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Crab</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="customerOrderBody"></tbody>
+    </table>
+</div>
+
+<script>
+function loadCustomerOrders() {
+    fetch('/orders')
+    .then(res => {
+        if (!res.ok) throw new Error('Failed to load orders');
+        return res.json();
+    })
+    .then(data => {
+        const items = data.orders || [];
+        const body = document.getElementById('customerOrderBody');
+
+        if (items.length === 0) {
+            body.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#fff;">No orders available</td></tr>';
+            return;
+        }
+
+        items.sort((a, b) => b.id - a.id);
+        body.innerHTML = items.map(o => `
+            <tr class="status-${o.status}">
+                <td>#${o.id}</td>
+                <td>${o.customer}</td>
+                <td>${o.crab}</td>
+                <td>${o.quantity}</td>
+                <td>₱${o.price}</td>
+                <td>₱${o.total}</td>
+                <td>${o.timestamp || 'N/A'}</td>
+                <td><span class="status-badge">${o.status.toUpperCase()}</span></td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editOrder(${o.id})">Edit</button>
+                    <button class="btn-complete" onclick="completeOrder(${o.id})">Complete</button>
+                    <button class="btn-delete" onclick="deleteOrder(${o.id})">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function editOrder(id) {
+    const customer = prompt('Customer name:');
+    if (customer === null) return;
+
+    const crab = prompt('Crab type:');
+    if (crab === null) return;
+
+    const quantity = prompt('Quantity:');
+    if (quantity === null) return;
+
+    const data = {
+        customer: customer.trim(),
+        crab: crab.trim(),
+        quantity: parseInt(quantity, 10)
+    };
+
+    fetch(`/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Update failed');
+        return res.json();
+    })
+    .then(() => loadCustomerOrders())
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function completeOrder(id) {
+    fetch(`/orders/${id}/finish`, { method: 'PUT' })
+    .then(res => {
+        if (!res.ok) throw new Error('Complete failed');
+        return res.json();
+    })
+    .then(() => loadCustomerOrders())
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function deleteOrder(id) {
+    if (!confirm('Delete this order?')) return;
+
+    fetch(`/orders/${id}`, { method: 'DELETE' })
+    .then(res => {
+        if (!res.ok) throw new Error('Delete failed');
+        return res.json();
+    })
+    .then(() => loadCustomerOrders())
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function goBack() {
+    window.location.href = '/admin-dashboard';
+}
+
+window.onload = loadCustomerOrders;
+</script>
+
+</body>
+</html>

@@ -1,190 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crab Orders</title>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
 <div class="container">
-    <h2>Available Crabs</h2>
-    <ul id="crabTypes"></ul>
-</div>
-
-<div class="container">
-    <h1>Crab Orders</h1>
+    <h1>Welcome to Crab Orders</h1>
 
     <div class="form-center">
-        <input id="customer" placeholder="Customer Name">
-        <input id="crab" placeholder="Crab Type">
-        <input id="quantity" type="number" placeholder="Quantity">
-        <button onclick="addOrder()">Add Order</button>
-    </div>
+        <!-- JS version -->
+        <button onclick="goToOrder()">Go to Order Page</button>
+        <button onclick="goToLogin()" class="admin-btn">Admin Login</button>
 
-    <div class="form-center">
-        <button onclick="goToHistory()">Transaction History</button>
-        <button onclick="toggleOrders()">Load Orders</button>
+        <!-- Fallback (no JS) -->
+        <noscript>
+            <br><br>
+            <a href="/order"><button>Go to Order Page</button></a>
+            <a href="/login"><button class="admin-btn">Admin Login</button></a>
+        </noscript>
     </div>
-
-    <ul id="list" style="display:none;"></ul>
 </div>
 
 <script>
-let ordersVisible = false;
-
-const crabTypes = [
-    { name: "King Crab", price: 10, img: "/static/images/kingcrab.jpg" },
-    { name: "Snow Crab", price: 9, img: "/static/images/snowcrab.jpg" },
-    { name: "Dungeness Crab", price: 8, img: "/static/images/dungenesscrab.jpg" },
-    { name: "Blue Crab", price: 7, img: "/static/images/bluecrab.jpg" },
-    { name: "Mud Crab", price: 6, img: "/static/images/mudcrab.jpg" },
-    { name: "Kasag", price: 5, img: "/static/images/kasagcrab.jpg" }
-];
-
-function loadCrabTypes() {
-    const list = document.getElementById("crabTypes");
-    list.innerHTML = "";
-
-    crabTypes.forEach(crab => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-            <img src="${crab.img}">
-            <div>
-                <strong>${crab.name}</strong><br>
-                ₱${crab.price}
-            </div>
-        `;
-
-        li.onclick = () => {
-            document.getElementById("crab").value = crab.name;
-        };
-
-        list.appendChild(li);
-    });
+function goToOrder() {
+    window.location.href = "/order";
 }
 
-function addOrder() {
-    const customer = document.getElementById("customer").value;
-    const crab = document.getElementById("crab").value;
-    const quantity = document.getElementById("quantity").value;
-
-    if (!customer || !crab || !quantity) {
-        alert("Please fill all fields");
-        return;
-    }
-
-    fetch('/orders', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            customer: customer,
-            crab: crab,
-            quantity: parseInt(quantity)
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert("Order Added!");
-
-        document.getElementById("customer").value = "";
-        document.getElementById("crab").value = "";
-        document.getElementById("quantity").value = "";
-
-        if (ordersVisible) showOrders();
-    })
-    .catch(err => alert("Error: " + err));
+function goToLogin() {
+    window.location.href = "/login";
 }
-
-function toggleOrders() {
-    ordersVisible = !ordersVisible;
-
-    if (ordersVisible) {
-        showOrders();
-    } else {
-        document.getElementById("list").style.display = "none";
-    }
-}
-
-function showOrders() {
-    fetch('/orders')
-    .then(res => res.json())
-    .then(data => {
-        const items = data.orders || [];
-        const list = document.getElementById("list");
-
-        list.innerHTML = "";
-
-        for (let i = items.length - 1; i >= 0; i--) {
-            const o = items[i];
-            const id = o.id;
-            const status = o.status;
-
-            const li = document.createElement("li");
-            li.className = status;
-
-            li.innerHTML = `
-                <div class="order-info">
-                    <span><strong>Order #</strong>${id}</span>
-                    <span><strong>Customer:</strong> ${o.customer}</span>
-                    <span><strong>Crab:</strong> ${o.crab}</span>
-                    <span><strong>Qty:</strong> ${o.quantity}</span>
-                    <span><strong>Price:</strong> ₱${o.price}</span>
-                    <span><strong>Total:</strong> ₱${o.total}</span>
-                    <span><strong>Status:</strong> ${status}</span>
-                </div>
-                <div class="order-actions">
-                    <button onclick="finishOrder(${id})">Finish</button>
-                    <button onclick="updateOrder(${id})">Update</button>
-                    <button onclick="deleteOrder(${id})">Delete</button>
-                </div>
-            `;
-
-            list.appendChild(li);
-        }
-
-        list.style.display = "block";
-    })
-    .catch(err => alert("Error loading orders: " + err));
-}
-
-function finishOrder(id) {
-    fetch(`/orders/${id}/finish`, { method: "PUT" })
-    .then(() => showOrders());
-}
-
-function deleteOrder(id) {
-    fetch(`/orders/${id}`, { method: "DELETE" })
-    .then(() => showOrders());
-}
-
-function updateOrder(id) {
-    const customer = prompt("New customer name:");
-    const crab = prompt("New crab type:");
-    const quantity = prompt("New quantity:");
-
-    let data = {};
-    // Only add to the object if the user didn't hit cancel and didn't leave it blank
-    if (customer !== null && customer.trim() !== "") data.customer = customer;
-    if (crab !== null && crab.trim() !== "") data.crab = crab;
-    if (quantity !== null && quantity.trim() !== "") data.quantity = parseInt(quantity);
-
-    // If the object is empty, don't even bother calling the server
-    if (Object.keys(data).length === 0) return;
-
-    fetch(`/orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(res => res.json())
-    .then(() => showOrders())
-    .catch(err => alert("Error updating order: " + err));
-}
-function goToHistory() {
-    window.location.href = "/history-page";
-}
-
-window.onload = loadCrabTypes;
 </script>
 
 </body>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Crab Orders</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+
+        <div class="nav-buttons">
+            <button onclick="goToOrder()" class="btn blue">Order Page</button>
+            <button onclick="goToHistory()" class="btn orange">History</button>
+            <button onclick="logout()" class="btn gray">Logout</button>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <h3>Orders Today</h3>
+            <p id="todayOrders">0</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Daily Income</h3>
+            <p id="dailyIncome">₱0</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Monthly Income</h3>
+            <p id="monthlyIncome">₱0</p>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="dashboard-grid">
+        <div class="chart-container">
+            <h3>Orders (Last 7 Days)</h3>
+            <canvas id="orderChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>Income (Last 7 Days)</h3>
+            <canvas id="incomeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-container">
+        <h2>Recent Orders</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Crab</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+let orderChart, incomeChart;
+
+function logout() {
+    window.location.href = "/admin-logout";
+}
+
+function goToOrder() {
+    window.location.href = "/order";
+}
+
+function goToHistory() {
+    window.location.href = "/customer-orders";
+}
+
+function loadDashboardData() {
+    fetch('/orders')
+    .then(res => {
+        if (!res.ok) throw new Error("Unauthorized");
+        return res.json();
+    })
+    .then(data => {
+        const orders = data.orders || [];
+
+        const tableBody = document.getElementById('historyTableBody');
+
+        const today = new Date().toISOString().slice(0,10);
+        const month = new Date().toISOString().slice(0,7);
+
+        let todayOrders = 0;
+        let dailyIncome = 0;
+        let monthlyIncome = 0;
+
+        tableBody.innerHTML = orders.map(o => {
+            const date = o.timestamp?.slice(0,10);
+            const m = o.timestamp?.slice(0,7);
+
+            if (date === today) {
+                todayOrders++;
+                dailyIncome += o.total;
+            }
+
+            if (m === month) {
+                monthlyIncome += o.total;
+            }
+
+            return `
+                <tr>
+                    <td>#${o.id}</td>
+                    <td>${o.customer}</td>
+                    <td>${o.crab}</td>
+                    <td>${o.quantity}</td>
+                    <td>₱${o.total}</td>
+                    <td>${o.status}</td>
+                </tr>
+            `;
+        }).join('');
+
+        document.getElementById('todayOrders').innerText = todayOrders;
+        document.getElementById('dailyIncome').innerText = `₱${dailyIncome.toLocaleString()}`;
+        document.getElementById('monthlyIncome').innerText = `₱${monthlyIncome.toLocaleString()}`;
+
+        buildCharts(orders);
+    })
+    .catch(() => {
+        alert("Session expired. Please login again.");
+        window.location.href = "/admin-login";
+    });
+}
+
+function buildCharts(orders) {
+    const labels = [];
+    const orderCounts = [];
+    const incomeData = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+
+        const day = d.toISOString().slice(0,10);
+        labels.push(day.slice(5));
+
+        const dayOrders = orders.filter(o => o.timestamp?.slice(0,10) === day);
+
+        orderCounts.push(dayOrders.length);
+        incomeData.push(dayOrders.reduce((sum, o) => sum + o.total, 0));
+    }
+
+    if (orderChart) orderChart.destroy();
+    if (incomeChart) incomeChart.destroy();
+
+    orderChart = new Chart(document.getElementById('orderChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Orders',
+                data: orderCounts
+            }]
+        }
+    });
+
+    incomeChart = new Chart(document.getElementById('incomeChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Income',
+                data: incomeData
+            }]
+        }
+    });
+}
+
+window.onload = loadDashboardData;
+</script>
+
+</body>
+</html>

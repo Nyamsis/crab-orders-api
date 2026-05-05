@@ -1,0 +1,72 @@
+/* General page styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1f2937; /* Dark background */
+    color: #f3f4f6; /* Light text */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Container for content */
+.container {
+    text-align: center;
+    background-color: rgba(31, 41, 55, 0.9); /* Semi-transparent dark box */
+    padding: 40px 60px;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Heading */
+h1 {
+    font-size: 2.2rem;
+    margin-bottom: 30px;
+    color: #f9fafb;
+}
+
+/* Buttons */
+button {
+    background-color: #3b82f6; /* Blue button */
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    margin: 10px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+}
+
+/* Admin button */
+.admin-btn {
+    background-color: #ef4444; /* Red button */
+}
+
+.admin-btn:hover {
+    background-color: #b91c1c;
+}
+
+/* Fallback buttons in <noscript> */
+noscript button {
+    margin: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .container {
+        padding: 30px 20px;
+    }
+
+    button {
+        width: 100%;
+        margin: 10px 0;
+    }
+}
