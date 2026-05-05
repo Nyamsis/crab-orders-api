@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Customer Orders</title>
+<title>Welcome</title>
 
 <style>
 * {
@@ -16,140 +16,73 @@
 body {
     background: #0f172a;
     color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
 
 /* container */
 .container {
-    max-width: 1100px;
-    margin: auto;
-    padding: 20px;
-}
-
-h1 {
     text-align: center;
-    margin-bottom: 20px;
 }
 
-/* button */
-.form-center {
+/* title */
+h1 {
+    font-size: 36px;
+    margin-bottom: 15px;
+}
+
+/* subtitle */
+p {
+    color: #94a3b8;
+    margin-bottom: 30px;
+}
+
+/* buttons */
+.button-group {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    gap: 15px;
 }
 
 button {
-    padding: 10px 15px;
+    padding: 12px 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     background: #3b82f6;
     color: white;
     cursor: pointer;
+    font-size: 16px;
     transition: 0.3s;
 }
 
 button:hover {
     background: #2563eb;
 }
-
-/* table */
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #1e293b;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.history-table th,
-.history-table td {
-    padding: 12px;
-    text-align: center;
-    border-bottom: 1px solid #334155;
-}
-
-.history-table th {
-    background: #0f172a;
-    color: #94a3b8;
-}
-
-.history-table tr:hover {
-    background: #273449;
-}
-
-/* status colors */
-.status {
-    padding: 5px 10px;
-    border-radius: 6px;
-    background: #334155;
-    font-size: 12px;
-}
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
-    <h1>Customer Orders</h1>
+    <h1>🦀 Welcome to Crab Ordering System</h1>
+    <p>Order fresh crabs easily or manage your account.</p>
 
-    <div class="form-center">
-        <button onclick="goBack()">⬅ Back to Dashboard</button>
+    <div class="button-group">
+        <button onclick="goToOrder()">🛒 Order Page</button>
+        <button onclick="goToLogin()">🔐 Login</button>
     </div>
-
-    <table class="history-table">
-        <thead>
-            <tr>
-                <th>Order #</th>
-                <th>Customer</th>
-                <th>Crab</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Total</th>
-                <th>Time</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-
-        <tbody id="historyTableBody"></tbody>
-    </table>
 </div>
 
 <script>
-function loadHistory() {
-    fetch('/orders')
-    .then(res => res.json())
-    .then(data => {
-        const items = data.orders || [];
-        const body = document.getElementById('historyTableBody');
-
-        if (items.length === 0) {
-            body.innerHTML = `<tr><td colspan="8">No orders found</td></tr>`;
-            return;
-        }
-
-        items.sort((a,b) => b.id - a.id);
-
-        body.innerHTML = items.map(o => `
-            <tr>
-                <td>#${o.id}</td>
-                <td>${o.customer}</td>
-                <td>${o.crab}</td>
-                <td>${o.quantity}</td>
-                <td>₱${o.price}</td>
-                <td>₱${o.total}</td>
-                <td>${o.timestamp || 'N/A'}</td>
-                <td><span class="status">${o.status.toUpperCase()}</span></td>
-            </tr>
-        `).join('');
-    })
-    .catch(err => alert(err.message));
+function goToOrder() {
+    window.location.href = '/order_page';
 }
 
-function goBack() {
-    window.location.href = '/admin-dashboard';
+function goToLogin() {
+    window.location.href = '/admin_login';
 }
-
-window.onload = loadHistory;
 </script>
 
 </body>
