@@ -146,13 +146,13 @@ def order_page():
 
 @app.route('/customer-orders')
 @admin_required
-def customer_orders_page():
+def customer_order():
     return render_template("customer_order.html")
 
 
 @app.route('/history', methods=['GET'])
 @admin_required
-def history_page():
+def history():
     if request.accept_mimetypes['application/json'] >= request.accept_mimetypes['text/html']:
         return jsonify({"orders": get_orders_data()})
     return render_template("history.html")
