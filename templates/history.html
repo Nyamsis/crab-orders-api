@@ -1,9 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Customer Orders</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='history.css') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Orders</title>
+
+<style>
+/* =====================
+   GLOBAL
+===================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    min-height: 100vh;
+}
+
+/* =====================
+   CONTAINER
+===================== */
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* =====================
+   BACK BUTTON
+===================== */
+.form-center {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+/* =====================
+   TABLE
+===================== */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.history-table th,
+.history-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #334155;
+}
+
+.history-table th {
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+.history-table tr:hover {
+    background: #273449;
+}
+
+/* =====================
+   EMPTY STATE
+===================== */
+.empty {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+}
+</style>
+
 </head>
+
 <body>
 
 <div class="container">
@@ -32,7 +126,7 @@
 
 <script>
 function loadHistory() {
-    fetch('/orders')   // ✅ FIXED (use /orders instead of /history)
+    fetch('/orders')
     .then(res => {
         if (!res.ok) throw new Error("Failed to fetch orders");
         return res.json();
@@ -42,7 +136,10 @@ function loadHistory() {
         const tableBody = document.getElementById('historyTableBody');
 
         if (items.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8">No orders found</td></tr>`;
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty">No orders found</td>
+                </tr>`;
             return;
         }
 

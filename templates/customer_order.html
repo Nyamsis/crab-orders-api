@@ -1,11 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Order Management</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='customer_order.css') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Order Management</title>
+
+<style>
+/* =====================
+   GLOBAL
+===================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    min-height: 100vh;
+}
+
+/* =====================
+   CONTAINER
+===================== */
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* =====================
+   BACK BUTTON
+===================== */
+.form-center {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.small-button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.small-button:hover {
+    background: #2563eb;
+}
+
+/* =====================
+   TABLE
+===================== */
+.customer-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.customer-table th,
+.customer-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #334155;
+}
+
+.customer-table th {
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+.customer-table tr:hover {
+    background: #273449;
+}
+
+/* =====================
+   STATUS BADGE
+===================== */
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #334155;
+}
+
+/* =====================
+   ACTION BUTTONS
+===================== */
+.actions {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+button {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.3s;
+}
+
+.btn-edit {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn-complete {
+    background: #22c55e;
+    color: white;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+/* =====================
+   STATUS COLORS (optional highlight)
+===================== */
+.status-pending {
+    border-left: 4px solid #f59e0b;
+}
+
+.status-finished {
+    border-left: 4px solid #22c55e;
+}
+</style>
+
 </head>
+
 <body>
 
 <div class="container">
@@ -45,11 +186,12 @@ function loadCustomerOrders() {
         const body = document.getElementById('customerOrderBody');
 
         if (items.length === 0) {
-            body.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#fff;">No orders available</td></tr>';
+            body.innerHTML = '<tr><td colspan="9" style="text-align:center;">No orders available</td></tr>';
             return;
         }
 
         items.sort((a, b) => b.id - a.id);
+
         body.innerHTML = items.map(o => `
             <tr class="status-${o.status}">
                 <td>#${o.id}</td>
@@ -81,23 +223,21 @@ function editOrder(id) {
     const quantity = prompt('Quantity:');
     if (quantity === null) return;
 
-    const data = {
-        customer: customer.trim(),
-        crab: crab.trim(),
-        quantity: parseInt(quantity, 10)
-    };
-
     fetch(`/orders/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+            customer: customer.trim(),
+            crab: crab.trim(),
+            quantity: parseInt(quantity, 10)
+        })
     })
     .then(res => {
         if (!res.ok) throw new Error('Update failed');
         return res.json();
     })
     .then(() => loadCustomerOrders())
-    .catch(err => alert('Error: ' + err.message));
+    .catch(err => alert(err.message));
 }
 
 function completeOrder(id) {
@@ -107,7 +247,7 @@ function completeOrder(id) {
         return res.json();
     })
     .then(() => loadCustomerOrders())
-    .catch(err => alert('Error: ' + err.message));
+    .catch(err => alert(err.message));
 }
 
 function deleteOrder(id) {
@@ -119,7 +259,7 @@ function deleteOrder(id) {
         return res.json();
     })
     .then(() => loadCustomerOrders())
-    .catch(err => alert('Error: ' + err.message));
+    .catch(err => alert(err.message));
 }
 
 function goBack() {

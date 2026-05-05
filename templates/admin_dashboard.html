@@ -1,12 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Crab Orders</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - Crab Orders</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* =====================
+    GLOBAL
+===================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #0f172a;
+    color: #fff;
+}
+
+/* =====================
+    CONTAINER
+===================== */
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* =====================
+    HEADER
+===================== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    font-size: 28px;
+}
+
+/* =====================
+    BUTTONS
+===================== */
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn.blue {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn.orange {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn.gray {
+    background: #64748b;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.8;
+}
+
+/* =====================
+    DASHBOARD GRID
+===================== */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* =====================
+    STATS CARD
+===================== */
+.stat-card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-card h3 {
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* =====================
+    CHARTS
+===================== */
+.chart-container {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* =====================
+    TABLE
+===================== */
+.table-container {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
+}
+
+th {
+    color: #94a3b8;
+}
+
+tr:hover {
+    background: #273449;
+}
+</style>
+
 </head>
 
 <body>
@@ -171,10 +316,7 @@ function buildCharts(orders) {
         type: 'line',
         data: {
             labels,
-            datasets: [{
-                label: 'Orders',
-                data: orderCounts
-            }]
+            datasets: [{ label: 'Orders', data: orderCounts }]
         }
     });
 
@@ -182,10 +324,7 @@ function buildCharts(orders) {
         type: 'bar',
         data: {
             labels,
-            datasets: [{
-                label: 'Income',
-                data: incomeData
-            }]
+            datasets: [{ label: 'Income', data: incomeData }]
         }
     });
 }
