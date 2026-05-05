@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import pymysql
 from datetime import datetime, timezone
 from functools import wraps
